@@ -2,6 +2,16 @@
 // Consumption, so also honor an explicit RUNNING_ON_AZURE app setting.
 const isAzure = !!process.env.WEBSITE_INSTANCE_ID || process.env.RUNNING_ON_AZURE === '1';
 
+/**
+ * @sparticuz/chromium v149 ships as ESM. Node 20.19+ (the Azure Functions
+ * runtime) lets us require() it, but it resolves to the module namespace —
+ * the chromium object with .args / .executablePath() lives on .default.
+ */
+function loadSparticuzChromium() {
+    const mod = require('@sparticuz/chromium');
+    return mod.default || mod;
+}
+
 async function launchBrowser() {
     const launchOptions = {
         headless: true,
@@ -9,7 +19,7 @@ async function launchBrowser() {
     };
 
     if (isAzure) {
-        const chromium = require('@sparticuz/chromium');
+        const chromium = loadSparticuzChromium();
         const playwright = require('playwright-core');
         launchOptions.args.push(...chromium.args);
         launchOptions.executablePath = await chromium.executablePath();
@@ -23,7 +33,7 @@ async function launchBrowser() {
 /** Resolves the chromium executable path without launching a browser. Used by the health check. */
 async function resolveExecutablePath() {
     if (isAzure) {
-        const chromium = require('@sparticuz/chromium');
+        const chromium = loadSparticuzChromium();
         return chromium.executablePath();
     }
     const { chromium: localChromium } = require('playwright');
