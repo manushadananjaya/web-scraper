@@ -1,4 +1,6 @@
-const isAzure = !!process.env.WEBSITE_INSTANCE_ID; // true only when running in Azure
+// WEBSITE_INSTANCE_ID is set on most Azure Functions plans, but NOT on Flex
+// Consumption, so also honor an explicit RUNNING_ON_AZURE app setting.
+const isAzure = !!process.env.WEBSITE_INSTANCE_ID || process.env.RUNNING_ON_AZURE === '1';
 
 async function launchBrowser() {
     const launchOptions = {
