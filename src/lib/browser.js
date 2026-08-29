@@ -1,51 +1,34 @@
-// WEBSITE_INSTANCE_ID is set on most Azure Functions plans, but NOT on Flex
-// Consumption, so also honor an explicit RUNNING_ON_AZURE app setting.
-const isAzure = !!process.env.WEBSITE_INSTANCE_ID || process.env.RUNNING_ON_AZURE === '1';
-
 /**
- * @sparticuz/chromium v149 ships as ESM. Node 20.19+ (the Azure Functions
- * runtime) lets us require() it, but it resolves to the module namespace —
- * the chromium object with .args / .executablePath() lives on .default.
+ * Chromium comes from the Playwright base image (mcr.microsoft.com/playwright),
+ * which ships the browser and every shared library it links. So there is no
+ * @sparticuz/chromium / Lambda-style dance any more — just launch Playwright's
+ * bundled chromium. `--no-sandbox` / `--disable-dev-shm-usage` are the standard
+ * flags for running headless chromium inside a container.
  */
-function loadSparticuzChromium() {
-    const mod = require('@sparticuz/chromium');
-    return mod.default || mod;
-}
-
 async function launchBrowser() {
-    const launchOptions = {
+    const { chromium } = require('playwright');
+    return chromium.launch({
         headless: true,
-        args: ['--disable-blink-features=AutomationControlled'],
-    };
-
-    if (isAzure) {
-        const chromium = loadSparticuzChromium();
-        const playwright = require('playwright-core');
-        launchOptions.args.push(...chromium.args);
-        launchOptions.executablePath = await chromium.executablePath();
-        return playwright.chromium.launch(launchOptions);
-    }
-
-    const { chromium: localChromium } = require('playwright');
-    return localChromium.launch(launchOptions);
+        args: [
+            '--no-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-blink-features=AutomationControlled',
+        ],
+    });
 }
 
 /** Resolves the chromium executable path without launching a browser. Used by the health check. */
 async function resolveExecutablePath() {
-    if (isAzure) {
-        const chromium = loadSparticuzChromium();
-        return chromium.executablePath();
-    }
-    const { chromium: localChromium } = require('playwright');
-    return localChromium.executablePath();
+    const { chromium } = require('playwright');
+    return chromium.executablePath();
 }
 
 /**
  * Reads proxy settings from env vars, for routing scrape traffic through a
- * residential/rotating proxy instead of the Function's own outbound IP —
+ * residential/rotating proxy instead of the container's own outbound IP —
  * the only real fix once that IP has been rate-flagged by Amazon (see
- * SCRAPER_PROXY_SERVER etc in local.settings.json / Azure App Settings).
- * Returns undefined when unconfigured, which Playwright treats as "no proxy".
+ * SCRAPER_PROXY_SERVER etc). Returns undefined when unconfigured, which
+ * Playwright treats as "no proxy".
  */
 function getProxyConfig() {
     const server = process.env.SCRAPER_PROXY_SERVER;
@@ -57,4 +40,4 @@ function getProxyConfig() {
     return proxy;
 }
 
-module.exports = { isAzure, launchBrowser, resolveExecutablePath, getProxyConfig };
+module.exports = { launchBrowser, resolveExecutablePath, getProxyConfig };
