@@ -363,6 +363,9 @@ Before submitting candorpick.com to Google Search Console:
   `src/app/favicon.ico` deleted. `layout.tsx` declares `metadata.icons` + `manifest` +
   `appleWebApp.title` + `viewport.themeColor`. Header wordmark replaced with
   `/logo/candorpick_logo.svg` (`public/logo/` also has `candorpick_favicon.svg`).
+- 2026-08-30 — mobile header fixed: `SiteHeader` reflows to logo + menu on row 1 and a
+  full-width search bar (input `flex-1`) on row 2; desktop unchanged (logo left, nav +
+  `w-56` search right, one row). Bigger tap targets + focus ring on mobile.
 - 2026-08-30 — blurry gallery images fixed:
   - Cause: scraper captured the ~40px thumbnail-strip variant of each image (Amazon size
     directive `._AC_SX38_.jpg`; Target scene7 `?wid=80`), which blows up blurry.
