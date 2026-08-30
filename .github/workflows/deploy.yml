@@ -53,4 +53,11 @@ jobs:
             az containerapp update \
               --name "$CONTAINER_APP" \
               --resource-group "$RESOURCE_GROUP" \
-              --image "${IMAGE}:${GITHUB_SHA}"
+              --image "${IMAGE}:${GITHUB_SHA}" \
+              --cpu 1.0 --memory 2.0Gi \
+              --min-replicas 0 --max-replicas 3
+            # Real app listens on 3000; the quickstart placeholder was on 80.
+            az containerapp ingress update \
+              --name "$CONTAINER_APP" \
+              --resource-group "$RESOURCE_GROUP" \
+              --target-port 3000
