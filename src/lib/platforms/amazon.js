@@ -95,11 +95,34 @@ function extractProductData(page) {
         // navigation — worth a spot check once a scrape succeeds). Falls
         // back to the thumbnail src itself when a given thumbnail lacks it
         // (e.g. color-swatch icons), and includes the large main image too.
-        const getHiRes = (img) => img.getAttribute('data-old-hires') || img.src;
+        // Amazon media URLs embed a size directive ("71abc._AC_SX466_.jpg").
+        // The thumbnail strip serves ~40px variants, which look blurry blown up
+        // to card/gallery size — stripping the directive yields the original
+        // full-resolution asset ("71abc.jpg").
+        const upgrade = (url) =>
+            typeof url === 'string'
+                ? url.replace(/\._[^/]+?(\.(?:jpe?g|png|gif|webp))(?=$|\?)/i, '$1')
+                : url;
+        const getHiRes = (img) => {
+            // #landingImage carries data-a-dynamic-image: a JSON map of
+            // {url: [w, h]} for the main image — take the widest.
+            const dyn = img.getAttribute('data-a-dynamic-image');
+            if (dyn) {
+                try {
+                    const entries = Object.entries(JSON.parse(dyn));
+                    entries.sort((a, b) => (b[1]?.[0] || 0) - (a[1]?.[0] || 0));
+                    if (entries[0]) return entries[0][0];
+                } catch {
+                    /* fall through */
+                }
+            }
+            return img.getAttribute('data-old-hires') || upgrade(img.src);
+        };
         const mainImage = document.querySelector('#landingImage, #imgTagWrapperId img');
         const galleryImages = Array.from(document.querySelectorAll('#altImages img'))
             .map(getHiRes)
-            .filter((src) => src && !src.includes('sprite'));
+            .filter((src) => src && !src.includes('sprite'))
+            .map(upgrade);
 
         return {
             title: getText('#productTitle'),
@@ -108,7 +131,11 @@ function extractProductData(page) {
             reviewCount: getText('#acrCustomerReviewText'),
             brand,
             availability,
-            images: [...new Set([mainImage && getHiRes(mainImage), ...galleryImages].filter(Boolean))],
+            images: [
+                ...new Set(
+                    [mainImage && getHiRes(mainImage), ...galleryImages].filter(Boolean).map(upgrade)
+                ),
+            ],
             bulletPoints: Array.from(document.querySelectorAll('#feature-bullets li'))
                 .map((li) => li.innerText.trim())
                 .filter(Boolean),

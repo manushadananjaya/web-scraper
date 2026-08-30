@@ -325,3 +325,23 @@ matched listing on another store, with the review page pointing at the real prod
   - New `ProductGallery` client component — hero image + thumbnail strip for multi-image scrapes.
   - NOTE: existing DB already has duplicate published rows (e.g. the "Universal Thread jeans"
     ×3 seen at build). The guard only prevents new ones — old dupes need a manual cleanup.
+- 2026-08-30 — category fixing tools in `trendgearreview` admin (Gemini often misfiles items):
+  - New `/admin/categories` page + sidebar link. Shows the full two-level tree with counts
+    (all statuses), an "Uncategorized" bucket, and per-subcategory expandable product lists.
+  - New `CategoryPicker` (dropdowns of existing categories + explicit "New…" option) — shown
+    prominently on every product page and beside each product in the categories screen. Replaces
+    the free-text inputs as the normal path so typos stop spawning near-duplicate categories.
+  - `PATCH /api/products/[id]` now accepts `category_id` (existing leaf) or `null` (uncategorize),
+    alongside the existing `mainCategory`/`subCategory` create-path.
+  - New `PATCH/DELETE /api/categories/[id]` (rename, move a subcategory under a different main,
+    delete-if-empty) and `POST /api/categories/merge` (fold a duplicate category into another,
+    reassigning its products). `proxy.ts` matcher extended to gate `/api/categories/*`.
+- 2026-08-30 — blurry gallery images fixed:
+  - Cause: scraper captured the ~40px thumbnail-strip variant of each image (Amazon size
+    directive `._AC_SX38_.jpg`; Target scene7 `?wid=80`), which blows up blurry.
+  - `web-scraper` `amazon.js` — main image now taken from `#landingImage`'s
+    `data-a-dynamic-image` (widest variant); all URLs get the size directive stripped
+    (`71abc._AC_SX466_.jpg` → `71abc.jpg`). `target.js` — scene7 URLs forced to `wid/hei=1200`.
+  - `trendgearreview` `src/lib/sanitize.ts` — `upgradeImageUrl` / `upgradeImages`, applied in
+    `cleanScrapedData` so **existing** products render sharp too, not just newly scraped ones.
+    Covered by `src/lib/sanitize.test.ts`.

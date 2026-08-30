@@ -94,9 +94,26 @@ async function scrape(page, url, context) {
             reviewCount: countLine?.trim() || null,
             brand,
             availability,
+            // Target images come from scene7, whose render size is set by the
+            // wid/hei query params — the gallery <img> src is a small variant.
+            // Force a large render so it isn't blurry when shown full-width.
             images: Array.from(document.querySelectorAll('[data-test^="image-gallery-item-"] img'))
                 .map((img) => img.src)
-                .filter(Boolean),
+                .filter(Boolean)
+                .map((src) => {
+                    try {
+                        const u = new URL(src);
+                        if (/(?:^|\.)scene7\.com$/i.test(u.hostname)) {
+                            u.searchParams.set('wid', '1200');
+                            u.searchParams.set('hei', '1200');
+                            u.searchParams.set('qlt', '85');
+                            u.searchParams.delete('fmt');
+                        }
+                        return u.toString();
+                    } catch {
+                        return src;
+                    }
+                }),
             bulletPoints: description ? [description] : [],
             specs,
             reviews,
