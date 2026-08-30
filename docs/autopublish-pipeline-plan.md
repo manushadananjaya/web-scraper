@@ -306,6 +306,21 @@ matched listing on another store, with the review page pointing at the real prod
 
 ---
 
+## Pre-Google launch
+
+Before submitting candorpick.com to Google Search Console:
+
+1. **Wipe the DB** — `trendgearreview/supabase/reset.sql` in the Supabase SQL Editor
+   (`truncate products, categories, trending_candidates cascade`), or
+   `node --env-file=.env scripts/reset-db.mjs`. Keeps schema, drops all rows.
+2. In Vercel: point the `candorpick.com` domain at the project, set
+   `NEXT_PUBLIC_SITE_URL=https://candorpick.com` in env vars.
+3. Re-populate via admin (dedupe guard + image upgrades + category tools are in place).
+4. **Redeploy** — `/reviews/[slug]` pages are SSG with no `revalidate`, so old
+   cached pages linger until the next deploy. Home/category self-heal in 5 min.
+5. Verify `/sitemap.xml`, `/robots.txt`, favicon, one review page.
+6. Search Console: add the property, submit `https://candorpick.com/sitemap.xml`.
+
 ## Progress log
 
 - 2026-08-30 — plan drafted, not started.
@@ -323,6 +338,8 @@ matched listing on another store, with the review page pointing at the real prod
     masonry grids (home / search / subcategory) switched from CSS `columns` to CSS `grid`.
   - `ProsConsBlock` renders a "we didn't find any…" note instead of hiding an empty side.
   - New `ProductGallery` client component — hero image + thumbnail strip for multi-image scrapes.
+    Later gained eBay/AliExpress-style hover-to-zoom (cursor-tracked `scale(2.5)`, real pointers
+    only, off under reduced-motion) and thumbnail image-swap on hover.
   - NOTE: existing DB already has duplicate published rows (e.g. the "Universal Thread jeans"
     ×3 seen at build). The guard only prevents new ones — old dupes need a manual cleanup.
 - 2026-08-30 — category fixing tools in `trendgearreview` admin (Gemini often misfiles items):
