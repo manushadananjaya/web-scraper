@@ -336,6 +336,16 @@ matched listing on another store, with the review page pointing at the real prod
   - New `PATCH/DELETE /api/categories/[id]` (rename, move a subcategory under a different main,
     delete-if-empty) and `POST /api/categories/merge` (fold a duplicate category into another,
     reassigning its products). `proxy.ts` matcher extended to gate `/api/categories/*`.
+- 2026-08-30 — renamed site "Verdict" → **CandorPick** (candorpick.com). `src/lib/site.ts` is the
+  source of truth (`SITE_NAME`, `SITE_URL` default `https://candorpick.com`, tagline, description);
+  hardcoded "Verdict" strings in header/footer/page titles replaced. `.env` gains
+  `NEXT_PUBLIC_SITE_URL`. Need to point the domain + set the env var in Vercel.
+- 2026-08-30 — favicons + logo wired. User-supplied RealFaviconGenerator set moved to `public/`
+  (`favicon.ico/.svg/-96x96.png`, `apple-touch-icon.png`, `web-app-manifest-{192,512}.png`,
+  `site.webmanifest` — manifest name set to CandorPick, theme `#c1440e` / bg `#f7f4ee`). Default
+  `src/app/favicon.ico` deleted. `layout.tsx` declares `metadata.icons` + `manifest` +
+  `appleWebApp.title` + `viewport.themeColor`. Header wordmark replaced with
+  `/logo/candorpick_logo.svg` (`public/logo/` also has `candorpick_favicon.svg`).
 - 2026-08-30 — blurry gallery images fixed:
   - Cause: scraper captured the ~40px thumbnail-strip variant of each image (Amazon size
     directive `._AC_SX38_.jpg`; Target scene7 `?wid=80`), which blows up blurry.
